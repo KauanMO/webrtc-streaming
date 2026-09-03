@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: streaming
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - streaming-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  quarkus:
+    build:
+      context: .
+      dockerfile: Dockerfile.jvm
+    environment:
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/streaming
+      QUARKUS_DATASOURCE_USERNAME: postgres
+      QUARKUS_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      QUARKUS_HTTP_PORT: 8081
+      APP_MEDIA_BASE_URL: http://localhost:8889
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - streaming-net
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml
+    ports:
+      - "8889:8889"
+      - "8189:8189/udp"
+    depends_on:
+      - quarkus
+    networks:
+      - streaming-net
+
+networks:
+  streaming-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

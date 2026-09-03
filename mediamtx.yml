@@ -1,0 +1,17 @@
+logLevel: info
+
+rtsp: no
+rtmp: no
+hls: no
+
+webrtc: yes
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
+webrtcICEServers2:
+  - url: stun:stun.l.google.com:19302
+
+authMethod: http
+authHTTPAddress: http://quarkus:8081/api/rooms/auth
+
+paths:
+  all_others:
